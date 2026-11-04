@@ -1,0 +1,20 @@
+# Maven build output
+**/target/
+
+# Runtime logs and JVM crash artifacts
+*.log
+hs_err_pid*.log
+replay_pid*.log
+
+# Local database files
+*.mv.db
+*.trace.db
+*.lock.db
+
+# Local environment and IDE metadata
+.env
+.env.*
+!.env.example
+.idea/
+*.iml
+~$*.docx
