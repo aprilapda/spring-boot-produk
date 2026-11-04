@@ -20,11 +20,9 @@ Consumer email tidak dijalankan secara default. Pengiriman email nyata memerluka
 - **CQRS Order**: POST/PUT/DELETE masuk ke ORDER; GET masuk ke ORDER-QUERY. Outbox dan RabbitMQ memperbarui read model secara asynchronous.
 - **Email**: event `ORDER_CREATED` diproses oleh consumer terpisah; kegagalan SMTP dapat di-retry dan diarahkan ke DLQ.
 
-Panduan detail dan langkah demo:
+Langkah demo dan contoh request:
 
-- [Panduan teknis UTS](ALUR_UTS_AUTH_CQRS_EMAIL.md)
 - [Skenario Postman](SCENARIO_POSTMAN.md)
-- [Penjelasan alur dalam Word](PENJELASAN_ALUR_UTS_ABL.docx)
 
 Import koleksi [ABL-Postman-Collection.json](ABL-Postman-Collection.json) untuk menjalankan contoh request.
 
