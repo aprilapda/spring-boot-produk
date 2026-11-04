@@ -1,0 +1,479 @@
+{
+  "info": {
+    "_postman_id": "b7c1d2e3-4f56-7890-abcd-ef1234567890",
+    "name": "ABL - CRUD Lengkap (Auth, Produk, Pelanggan, Order)",
+    "description": "1) Jalankan D:\\ABL\\start-all.bat dan tunggu status port service.\n2) Import koleksi ini.\n3) Buka folder '0 Auth' -> 'A4 Login admin' -> Send => token OTOMATIS tersimpan.\n4) Jalankan folder 1..5 berurutan. Setiap 'Create' menyimpan id otomatis ke variabel.\n\nService berjalan tanpa jendela CMD terpisah; log ada di run.log masing-masing modul. RabbitMQ berjalan sebagai Windows Service. Consumer/email opsional dan dapat mengirim email sungguhan; jangan aktifkan tanpa izin.\n\nbaseUrl = http://localhost:9001 (gateway; Eureka harus jalan).\nAlternatif port langsung: urlAuth=8086, urlProduk=8083, urlPelanggan=8082, urlOrder=8081.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:9001", "type": "string" },
+    { "key": "urlAuth", "value": "http://localhost:8086", "type": "string" },
+    { "key": "urlProduk", "value": "http://localhost:8083", "type": "string" },
+    { "key": "urlPelanggan", "value": "http://localhost:8082", "type": "string" },
+    { "key": "urlOrder", "value": "http://localhost:8081", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "produkId", "value": "", "type": "string" },
+    { "key": "jenisProdukId", "value": "", "type": "string" },
+    { "key": "pelangganId", "value": "", "type": "string" },
+    { "key": "orderId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "0 Auth (tanpa token)",
+      "auth": { "type": "noauth" },
+      "item": [
+        {
+          "name": "A1 Register user baru",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"siswa1\",\n  \"password\": \"rahasia123\",\n  \"email\": \"siswa1@example.com\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "register" ] }
+          }
+        },
+        {
+          "name": "A2 Register duplikat (ekspetasi 409)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"siswa1\",\n  \"password\": \"rahasia123\",\n  \"email\": \"siswa1@example.com\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "register" ] }
+          }
+        },
+        {
+          "name": "A3 Register kosong (ekspetasi 400)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"\",\n  \"password\": \"\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "register" ] }
+          }
+        },
+        {
+          "name": "A4 Login admin (SIMPAAN TOKEN OTOMATIS)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set(\"token\", r.token);",
+                  "  console.log(\"TOKEN tersimpan otomatis ke variabel {{token}}\");",
+                  "} else {",
+                  "  console.log(\"Login gagal, status: \" + pm.response.code);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "login" ] }
+          }
+        },
+        {
+          "name": "A5 Login salah password (ekspetasi 401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"salah\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "login" ] }
+          }
+        },
+        {
+          "name": "A6 Login username tidak ada (ekspetasi 401)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"hantu\",\n  \"password\": \"x\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "login" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1 Produk CRUD (tanpa token)",
+      "item": [
+        {
+          "name": "B1 Create produk (simpan id)",
+          "auth": { "type": "noauth" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set(\"produkId\", String(r.id));",
+                  "  console.log(\"produkId tersimpan: \" + r.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"nama\": \"Tablet\",\n  \"harga\": 3000000,\n  \"deskripsi\": \"Tablet murah\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/produk", "host": [ "{{baseUrl}}" ], "path": [ "api", "produk" ] }
+          }
+        },
+        {
+          "name": "B2 List semua produk",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/produk", "host": [ "{{baseUrl}}" ], "path": [ "api", "produk" ] }
+          }
+        },
+        {
+          "name": "B3 Detail produk",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/produk/{{produkId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "produk", "{{produkId}}" ] }
+          }
+        },
+        {
+          "name": "B4 Update produk",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"nama\": \"Tablet Pro\",\n  \"harga\": 4500000,\n  \"deskripsi\": \"Tablet versi Pro\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/produk/{{produkId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "produk", "{{produkId}}" ] }
+          }
+        },
+        {
+          "name": "B5 Bukti tersimpan (GET lagi)",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/produk/{{produkId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "produk", "{{produkId}}" ] }
+          }
+        },
+        {
+          "name": "B6 Delete produk (ekspetasi 204)",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/produk/{{produkId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "produk", "{{produkId}}" ] }
+          }
+        },
+        {
+          "name": "B7 Detail setelah dihapus (ekspetasi 404)",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/produk/{{produkId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "produk", "{{produkId}}" ] }
+          }
+        },
+        {
+          "name": "B8 Update id tidak ada (ekspetasi 404)",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"nama\": \"x\",\n  \"harga\": 1,\n  \"deskripsi\": \"x\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/produk/9999", "host": [ "{{baseUrl}}" ], "path": [ "api", "produk", "9999" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 Jenis Produk CRUD (tanpa token)",
+      "item": [
+        {
+          "name": "C1 Create jenis produk (simpan id)",
+          "auth": { "type": "noauth" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set(\"jenisProdukId\", String(r.id));",
+                  "  console.log(\"jenisProdukId tersimpan: \" + r.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"namaJenis\": \"Elektronik\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/jenis-produk", "host": [ "{{baseUrl}}" ], "path": [ "api", "jenis-produk" ] }
+          }
+        },
+        {
+          "name": "C2 List jenis produk",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/jenis-produk", "host": [ "{{baseUrl}}" ], "path": [ "api", "jenis-produk" ] }
+          }
+        },
+        {
+          "name": "C3 Detail jenis produk",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/jenis-produk/{{jenisProdukId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "jenis-produk", "{{jenisProdukId}}" ] }
+          }
+        },
+        {
+          "name": "C4 Update jenis produk",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"namaJenis\": \"Elektronik Rumah\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/jenis-produk/{{jenisProdukId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "jenis-produk", "{{jenisProdukId}}" ] }
+          }
+        },
+        {
+          "name": "C5 Delete jenis produk (ekspetasi 204)",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/jenis-produk/{{jenisProdukId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "jenis-produk", "{{jenisProdukId}}" ] }
+          }
+        },
+        {
+          "name": "C6 Detail setelah dihapus (ekspetasi 404)",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/jenis-produk/{{jenisProdukId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "jenis-produk", "{{jenisProdukId}}" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 Pelanggan CRUD (token wajib)",
+      "item": [
+        {
+          "name": "D0 Tanpa token (ekspetasi 401)",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/pelanggan", "host": [ "{{baseUrl}}" ], "path": [ "api", "pelanggan" ] }
+          }
+        },
+        {
+          "name": "D1 Create pelanggan (simpan id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set(\"pelangganId\", String(r.id));",
+                  "  console.log(\"pelangganId tersimpan: \" + r.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"nama\": \"April\",\n  \"alamat\": \"Padang\",\n  \"jenis_kelamin\": \"P\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/pelanggan", "host": [ "{{baseUrl}}" ], "path": [ "api", "pelanggan" ] }
+          }
+        },
+        {
+          "name": "D2 List semua pelanggan",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/pelanggan", "host": [ "{{baseUrl}}" ], "path": [ "api", "pelanggan" ] }
+          }
+        },
+        {
+          "name": "D3 Detail pelanggan",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/pelanggan/{{pelangganId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "pelanggan", "{{pelangganId}}" ] }
+          }
+        },
+        {
+          "name": "D4 Update pelanggan",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"nama\": \"Aprilia\",\n  \"alamat\": \"Bukittinggi\",\n  \"jenis_kelamin\": \"P\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/pelanggan/{{pelangganId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "pelanggan", "{{pelangganId}}" ] }
+          }
+        },
+        {
+          "name": "D5 Delete pelanggan (ekspetasi 204)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/pelanggan/{{pelangganId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "pelanggan", "{{pelangganId}}" ] }
+          }
+        },
+        {
+          "name": "D6 Detail setelah dihapus (ekspetasi 404)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/pelanggan/{{pelangganId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "pelanggan", "{{pelangganId}}" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 Order CRUD (token wajib + agregasi)",
+      "item": [
+        {
+          "name": "E1a Create pelanggan untuk order (simpan id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set(\"pelangganId\", String(r.id));",
+                  "  console.log(\"pelangganId tersimpan: \" + r.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"nama\": \"Pelanggan Order\",\n  \"alamat\": \"Solok\",\n  \"jenis_kelamin\": \"P\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/pelanggan", "host": [ "{{baseUrl}}" ], "path": [ "api", "pelanggan" ] }
+          }
+        },
+        {
+          "name": "E1 Create order (simpan order id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set(\"orderId\", String(r.id));",
+                  "  console.log(\"orderId tersimpan: \" + r.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"produkId\": 1,\n  \"pelangganId\": {{pelangganId}},\n  \"tglTrans\": \"2026-10-23\",\n  \"jumlah\": 2,\n  \"total\": 24000000\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": [ "{{baseUrl}}" ], "path": [ "api", "orders" ] }
+          }
+        },
+        {
+          "name": "E2 List order - AGREGASI 3 service",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": [ "{{baseUrl}}" ], "path": [ "api", "orders" ] }
+          }
+        },
+        {
+          "name": "E3 Detail order",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/orders/{{orderId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "orders", "{{orderId}}" ] }
+          }
+        },
+        {
+          "name": "E4 Detail order via /details",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/orders/{{orderId}}/details", "host": [ "{{baseUrl}}" ], "path": [ "api", "orders", "{{orderId}}", "details" ] }
+          }
+        },
+        {
+          "name": "E5 Update order",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"produkId\": 1,\n  \"pelangganId\": {{pelangganId}},\n  \"tglTrans\": \"2026-10-24\",\n  \"jumlah\": 5,\n  \"total\": 60000000\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/orders/{{orderId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "orders", "{{orderId}}" ] }
+          }
+        },
+        {
+          "name": "E6 Delete order (ekspetasi 204)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/orders/{{orderId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "orders", "{{orderId}}" ] }
+          }
+        },
+        {
+          "name": "E7 Detail setelah dihapus (ekspetasi 404)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/orders/{{orderId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "orders", "{{orderId}}" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 Uji Keamanan",
+      "item": [
+        {
+          "name": "F1 Orders TANPA token (ekspetasi 401)",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": [ "{{baseUrl}}" ], "path": [ "api", "orders" ] }
+          }
+        },
+        {
+          "name": "F2 Pelanggan TANPA token (ekspetasi 401)",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/pelanggan", "host": [ "{{baseUrl}}" ], "path": [ "api", "pelanggan" ] }
+          }
+        },
+        {
+          "name": "F3 Order id tidak ada (ekspetasi 404)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/orders/9999", "host": [ "{{baseUrl}}" ], "path": [ "api", "orders", "9999" ] }
+          }
+        },
+        {
+          "name": "F4 Order via port langsung 8081 (tanpa gateway)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{urlOrder}}/api/orders", "host": [ "{{urlOrder}}" ], "path": [ "api", "orders" ] }
+          }
+        }
+      ]
+    }
+  ]
+}

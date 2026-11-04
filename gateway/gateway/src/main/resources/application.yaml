@@ -1,0 +1,45 @@
+server:
+  port: 9001
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: AUTH
+              uri: lb://AUTH
+              predicates:
+                - Path=/api/auth/**
+            - id: PRODUK
+              uri: lb://PRODUK
+              predicates:
+                - Path=/api/produk/**
+            - id: JENIS-PRODUK
+              uri: lb://PRODUK
+              predicates:
+                - Path=/api/jenis-produk/**
+            - id: PELANGGAN
+              uri: lb://PELANGGAN
+              predicates:
+                - Path=/api/pelanggan/**
+            - id: ORDER
+              uri: lb://ORDER
+              predicates:
+                - Path=/api/orders/**
+                - Method=POST,PUT,DELETE
+            - id: ORDER-QUERY
+              uri: lb://ORDER-QUERY
+              predicates:
+                - Path=/api/orders/**
+                - Method=GET
+
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
